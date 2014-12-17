@@ -1,6 +1,6 @@
 # Practical Machine Learning: Peer Assessment
 Guido Gallopyn  
-12/16/2014  
+12/17/2014  
 
 
 
@@ -261,9 +261,7 @@ I decided to use the combined model for the submission of the 20 point testing s
 
 Note: The high accuracy measured here, may be an overestimate due to the artifact of the data set partitioning and cross validation method of resampeling used to measure accuracy on the data set that is a set of time series. Data partitioning and resampeling procedures mix samples from all time series in the data-set, a better way to cross validate may be to hold out complete time series in data partitioning of training, test and evaluation sets and for accuracy measurement on the training set via cross validation. In this way there would be a higher independence of the training, test and evaluation data sets. 
 
-This was not pursued further in this project, as the final model created in this project obtained a perfect 20/20 score on the Coursera submission pages.  
-
-# Appendix
+This was not pursued further in this project, as the final model created in this project obtained a perfect 20/20 score on the Coursera submission pages.
 
 # References
 [1] Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
@@ -271,3 +269,5 @@ Read more: [http://groupware.les.inf.puc-rio.br/har#ixzz3M5zysvol](http://groupw
 
 [2] the caret package
 [http://topepo.github.io/caret/](http://topepo.github.io/caret/)
+
+# Appendix
