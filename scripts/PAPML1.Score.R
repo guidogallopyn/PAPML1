@@ -13,8 +13,10 @@ library(caret)
 # set working directory appropriately
 setwd("~/Documents/Courses/DataScience/projects/PracticalML")
 
+#run preprocessing script to create if needed
 load("data/scoring.RData")
 
+#run model building script to create if needed
 load("models/modFit0.RData")
 load("models/modFit1.RData")
 load("models/modFit2.RData")

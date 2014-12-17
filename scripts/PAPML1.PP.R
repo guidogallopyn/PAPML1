@@ -30,6 +30,13 @@ setwd("~/Documents/Courses/DataScience/projects/PracticalML/data")
 
 if (file.exists("data.RData")) { load("data.RData")
 } else {
+  
+  # download data file if necessary
+  if (!file.exists("pml-training.csv")) { 
+    fileUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+    download.file(fileUrl, "pml-training.csv", method="curl")
+  }
+  
   # Read the csv file for data set
   data <- read.csv("pml-training.csv")
   
@@ -60,6 +67,11 @@ if (file.exists("data.RData")) { load("data.RData")
   save(training,testing,evaluation,file="data.RData")
 
   # preparing the scoring set
+  # download data file if necessary
+  if (!file.exists("pml-testing.csv")) { 
+    fileUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+    download.file(fileUrl, "pml-testing.csv", method="curl")
+  }
   data <- read.csv("pml-testing.csv")
   vars <- c(setdiff(vars,c("classe")),"problem_id")
   data <- add.magnitudes(data[vars])

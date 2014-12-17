@@ -20,6 +20,7 @@ library(caret)
 # set working directory appropriately
 setwd("~/Documents/Courses/DataScience/projects/PracticalML")
 
+# run prep-pocessing script to create file if needed
 load("data/data.RData")
 
 # model0: nearest neigbors
