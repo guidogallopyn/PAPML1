@@ -6,25 +6,29 @@ Guido Gallopyn
 
 # Introduction
 
-In this project, our goal is to predict the manner in which subjects perform a weightlifting exercise using data from accelerometers on the belt, forearm, arm, and dumbbell as predictors. We use the Weight Lifting Exercise Data-set that contains data from 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website [here](http://groupware.les.inf.puc-rio.br/har). 
+In this project, our goal is to predict the manner in which subjects perform a weightlifting exercise using as predictors data from accelerometers on the belt, forearm, arm and dumbbell. We use the Weight Lifting Exercise Data-set that contains data from 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website [here](http://groupware.les.inf.puc-rio.br/har). see [ref 1.]
 
-This report describes how the prediction model was build, how we used cross validation, what the estimated out of sample error is, and explains the choices that were made. We have used the prediction model to predict 20 different test cases. 
+This report describes how a set of prediction model was build with the caret package [ref 2.], how we used cross validation to estimate out of sample error and selected the best model, and we explain the choices that were made. We have used the best prediction model to predict 20 different test cases as part of this assignment. 
 
 # Explory Analysis and Data Processing
 
-* the pml-training.csv consists of a set of time series with in total 19622 observations of 160 variables. pml-testing.csv contains only 20 discrete points in time, preventing the prediction model to use features derived from time windows as the authors from the data set [ref 1] did in their prediction modeling. We remove all time related variables. 
+## Observation
 
-* many variables are left blank for a majority of the observations, we remove variables with more than 50% NA observations.
+* The pml-training.csv data set consists of a set of time series with in total 19622 observations of 160 variables. The pml-testing.csv contains only 20 discrete points in time. This is preventing the prediction model to use features derived from time windows on the data set as the authors in [ref 1] did in their prediction modeling. We have removed all time related variables from the observations. 
 
-* although some models are robust to this, we remove variables with near zero variance, to reduce the training data size and the training time
+* Many variables are left blank for a majority of the observations, we remove variables with more than 50% blank observations.
 
-* some data from the accellerometers comes in the form of (x,y,z) components of 3D vectors. As covariates we calculate magnitudes of these vectors and we remove the x, y and z components.
+* Although some prediction models are robust to this, we remove variables with near zero variance primarily to reduce the training data size and model training time.
 
-* there are some outliers in  magnet\_dumbbell\_mag and gyros\_dumbbell\_mag and gyros\_forearm\_mag variables, each have one observation 50 or more standard deviations from the mean. However we have not removed them, as we plan to use non-model based prediction that is robust against outliers.
+* Some data from the accellerometers come in the form of (x,y,z) components of 3D vectors. We calculate magnitudes of these vectors as covariates and we remove the individual x, y and z components.
 
-* With these pre-processing steps we obtain a data set of 19622 observations of 25 variables
+* There are outliers in  magnet\_dumbbell\_mag and gyros\_dumbbell\_mag and gyros\_forearm\_mag variables, each have  observations as far as 50 or more standard deviations from the mean. We have removed them for graphical scaling purposes, but we left them intact for model training as we plan to use non-parametric based prediction that is robust against outliers.
 
-* To train, test and evaluate we partition the data in 3 subsets. We use the training set to train all prediction models, we use the test set for tuning of parameters of the training procedures if needed, and we use the evaluation set to predict the to be expected accuracy. As the final evaluation will be done on discrete time points, we will partition the data with the random partitioning as provided by caret createDataPartition function. Evaluation set is 30% of the data, training set 49% and the test set 21%.  
+* With these pre-processing steps we obtain a data set of 19622 observations of 25 variables.
+
+## Data Partitioning
+
+* To train, test and evaluate our models we partition the data in 3 subsets as outlined below. We use the training set to train all prediction models and estimate accuracy trough cross validation, we use the test set for error analysis and tuning of parameters when needed, and we use the evaluation set to finally predict the to be expected accuracy. As the final evaluation will be done on discrete time points, we will partition the data with the random partitioning as provided by caret createDataPartition function. Evaluation set is 30% of the data, training set 49% and the test set 21%.  
 
 
 ```r
@@ -36,7 +40,11 @@ testing  <- training[-inTrain,]
 training <- training[inTrain,]
 ```
 
-* Below are 2 characteristic plots of a graphical analysis of predictor variables. The plot shows 2 principle components of the predictor variables with data points colored according to the classe. Observe that classes are not confined to simple regions in this 2D sub-space, and that there are no clear decision boundaries for classification.
+## Exploratory Data Analysis
+
+Below are 2 characteristic plots of a graphical analysis of predictor variables in the training set. 
+
+* The first plot shows 2 principle components of the predictor variables with data points colored according to the classe. Observe that the data is quite noisy and that the classes are not confined to simple regions in this 2D sub-space, and that there are no obvious decision boundaries for classification.
 
 
 ```r
@@ -51,17 +59,17 @@ ggplot(pcdata,aes(PC1,PC2)) +  xlim(-5,5) + ylim(-5,5) + geom_point(aes(colour=c
 
 
 ```r
-cart <- train(classe ~ . , method="rpart",data=training)
+cart <- train(classe ~ . , method="rpart", data=training)
 featurePlot(x=training[,setdiff(cart$finalModel$frame$var,c("<leaf>"))], y=training$classe, plot="pairs")
 ```
 
 ![CART predictors](report/plot2.png)
 
-* In conclusion, the exploratory analysis of training data reveals a complex data set with a high high degree of overlap between the 5 classes A, B, C, D and E, and non-obvious decision boundaries for the classes A, B, C, D and E.
+In conclusion, the exploratory analysis of training data reveals a complex and noisy data set with a high high degree of overlap between the 5 classes A, B, C, D and E, and non-obvious decision boundaries for the classes A, B, C, D and E.
 
 # Model Selection, Training and Cross-validation
 
-The exploratory analysis points to a hard classification problem that will best be tackled by prediction techniques such as classification trees and more advanced statistical classification techniques. We will use the caret package to explore a variety of modeling techniques and in addition build combination of prediction models.
+The exploratory analysis points to a hard classification problem that will best be tackled by prediction techniques such as classification trees and more advanced statistical classification techniques. We will use the caret package to explore a variety of modeling techniques and in addition build a combination of prediction models.
 
 ## Simple Classification Tree
 
@@ -74,18 +82,18 @@ fancyRpartPlot(modFit1$finalModel)
 ```
 ![Classification Tree](report/plot3.png)
 
-This classification tree scores an accuracy of 48% on the test set. As can be seen, the tree lacks a leaf node to predict class B the sensitivity (recall) of the B class is zero. The purity of the rightmost (red) leaf is great, leading to a positive predictive value (precision) of 99.8% for the E class by using just one simple split on roll-belt. The A class has two leaf nodes resulting from two split criteria on roll belt and pitch-forearm that achieve a recall (sensitivity) of 80%, but only with a precision of 57%. The leaf node for class D is the node where a lot of the data is classified (43%) and with low purity (%). Apparently the rpart training doesn't find a way to further split this node and improve accuracy. With these low accuracy results we have concluded that a simple classification tree will not lead to good results, and we have not explored various training options but instead explored other prediction methods. The full evaluation results are in the appendix.
+This classification tree has an accuracy of 48% determined by the default cross validation based on resampeling. As can be seen, the tree lacks a leaf node to predict class B hence the sensitivity (recall) of B class prediction is zero. The purity of the rightmost (red) leaf is great, leading to a positive predictive value (precision) of 99.8% for the E class by using just one simple split on roll-belt. The A class has two leaf nodes resulting from two split criteria on roll-belt and pitch-forearm that achieve a recall (sensitivity) of 80%, but only with a precision of 57%. The leaf node for class D is the node where a lot of the data is classified (43%) and with low purity. Apparently the rpart training doesn't find a way to further split this node and improve accuracy. With these low accuracy results we can concluded that a simple classification tree will not lead to good results, and we have not explored various rpart training options, but instead we explored other and more advanced prediction methods.
 
 ## More complex classifiers
 
-Given the complexity of the data, we proceed to a four more classifiers on the training set
+Given the complexity of the data, we proceed to build four more classifiers on the training set
 
-* a k-nearest neighbor non-parametric model with knn method 
-* a bagging with trees model using treebag method
-* a random forest model using rf method
-* a boosting with trees model with gbm method
+* a k-Nearest Neighbors non-parametric model with knn method 
+* a Bagged CART model using treebag method
+* a Random Forest model using rf method
+* a Stochastic Gradient Boosting model with gbm method
 
-For all these training we use no pre-processing and we use caret default parameters which means repeated bootstrapped resampeling (25 reps) with optimal model selection based on accuracy. The training take considerable time (multiple hours of CPU time)
+For all these model training we don't use pre-processing and we use the caret default parameters, for cross validation this means repeated bootstrapped resampeling (25 reps) with optimal model selection based on accuracy. The training based on the code below takes considerable time (multiple hours of CPU time)
 
 
 ```r
@@ -121,15 +129,17 @@ summary(resamps)
 ## GBM     0.909   0.914  0.917 0.918   0.922 0.935    0
 ```
 
-The best accuracy measured trough cross validation on the training set is obtained by a Random Forest model, it reaches 97.86% which is comparable to the recognition performance of 98.03% in [ref.1]. The result in [ref.1] was obtained with a classifier constructed as an ensemble of 10 random forests of 10 trees using a bagging method, with predictor variables extracted from an optimal 2.5 sec time windows of the sensors data. The random forest constructed by caret in this project used predictor variables as points in time but contains 500 trees. 
+Observations
 
-The tree bagging and boosting with threes models give somewhat lower accuracy then the random forest model.
+* The best accuracy measured through cross validation on the training set is obtained by the Random Forest model, it reaches 97.86% which is comparable to the recognition performance of 98.03% in [ref.1][1]. The result in [ref.1][1] was obtained with a classifier constructed as an ensemble of 10 random forests of 10 trees using a bagging method, with predictor variables extracted from an optimal 2.5 sec time windows of the sensors data. The random forest constructed by caret in this project used predictor variables with discrete time points but contains 500 trees. 
 
-Again surprising is that a simple non-parametric approach as k nearest neighbors is able to reach 82.66 accuracy.
+* The Bagged CART and Stochastic Gradient Boosting models give somewhat lower accuracy then the random forest model.
+
+* Surprising is that a simple non-parametric approach as k nearest neighbors is able to reach 82.66 accuracy.
 
 # A Combined Classifier 
 
-As a final step in persuit of even higher accuracy, we build a combined classifier using the models from the previous section, with a random forest to combine the predictions from the test set and provide a final classification. 
+As a final step in pursuit of even higher accuracy, we build a combined classifier using an ensemble of the models from the previous section, with a random forest to combine the predictions from the ensemble on the test set to provide a final prediction. 
 
 
 ```r
@@ -166,9 +176,9 @@ print(modFit6)
 ## The final value used for the model was mtry = 9.
 ```
 
-The estimated accuracy of the combined classifier on the test set through cross valistion is 98.8%
+The estimated accuracy of the combined classifier on the test set through cross validation is 98.8%
 
-On the test set there are only a few places where the final combined model provides a different prediction compared to the random forrest predictor from the previous section.
+On the test set there are only a few observations where the final combined model provides a different prediction compared to the random forest predictor from the previous section.
 
 
 ```r
@@ -188,7 +198,7 @@ confusionMatrix(predict(modFit3,testing),predict(modFit6,pred))$table
 
 # Final Evaluation and Conclusions
 
-To estimate expected accuracy of the final combined classifier we use the evaluation data set and we compare accuracy with the models explored in this project. We predict outcomes on the evaluation data using the models, and calculate a confusion matrix comparing predicted ourcomes with the evaluation reference, and calculate derived statistics.  
+To compare the accuracy of the combined predictor with the models explored in this project, we use the evaluation data set. We predict outcomes on the evaluation data using the models, and calculate a confusion matrix comparing predicted outcomes with the evaluation reference, and calculate derived statistics.  
 
 
 ```r
@@ -253,21 +263,18 @@ print(acc[order(acc$Accuracy),])
 ## 4                Random Forest      rf   0.9852
 ```
 
-Line number 6 is the accuracy from the final model on the evaluation set, note that it is slighly lower than the random forest model from the previous section, but is well within the 95% confidence interval. 
+Line number 6 is the accuracy from the final model on the evaluation set, note that it is slightly lower than the random forest model from the previous section, but is well within the 95% confidence interval. 
 
-I found the accuracy obtained surprisingly high, especially that a single large random forest and a also a more complex combined model trained on noisy data taken randomly from time series is able to match the accuracy of the approach in [ref.1]. 
+I found the accuracy obtained surprisingly high, especially that a single large random forest and a also a more complex combined model trained on noisy data taken randomly from time series is able to match the accuracy of the approach in [ref.1][1]
 
 I decided to use the combined model for the submission of the 20 point testing set of this project, because although the accuracy is equivalent as the random forest model, I would hope for slightly more robustness to new data due to a larger number of predictors 
 
-Note: The high accuracy measured here, may be an overestimate due to the artifact of the data set partitioning and cross validation method of resampeling used to measure accuracy on the data set that is a set of time series. Data partitioning and resampeling procedures mix samples from all time series in the data-set, a better way to cross validate may be to hold out complete time series in data partitioning of training, test and evaluation sets and for accuracy measurement on the training set via cross validation. In this way there would be a higher independence of the training, test and evaluation data sets. 
-
-This was not pursued further in this project, as the final model created in this project obtained a perfect 20/20 score on the Coursera submission pages.
+Note: The high accuracy measured here, may be an overestimate due to the artifact of the data set partitioning and cross validation method of resampeling used to measure accuracy on the data set that is a set of time series. Data partitioning and resampeling procedures mix samples from all time series in the data-set. A better way to cross validate may be to hold out complete time series for training, test and evaluation sets and also for accuracy measurement on the training set via a more sophisticated cross validation. In this way there would be a higher independence of the training, test and evaluation data sets. This was not pursued further in this project, as the final model created in this project obtained a perfect 20/20 score on the Coursera submission pages already.
 
 # References
-[1] Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
-Read more: [http://groupware.les.inf.puc-rio.br/har#ixzz3M5zysvol](http://groupware.les.inf.puc-rio.br/har#ixzz3M5zysvol)
+1: Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3M5zysvol
 
-[2] the caret package
-[http://topepo.github.io/caret/](http://topepo.github.io/caret/)
+2: the caret package http://topepo.github.io/caret/
 
-# Appendix
+
